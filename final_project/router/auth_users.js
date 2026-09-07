@@ -80,14 +80,28 @@ regd_users.put("/review/:isbn", (req, res) => {
     });
 });
 // deleting a book review
-regd_users.delete("/auth/review/:isbn", (req, res) => {
+regd_users.delete("/review/:isbn", (req, res) => {
     const isbn = req.params.isbn;
 
-    // Check if user is logged in
-    const username = req.session.authorization?.username;
+    const authorization = req.headers.authorization || "";
+    const token = authorization.startsWith("Bearer ")
+        ? authorization.slice(7)
+        : authorization;
+    let username = req.session.authorization?.username;
+
+    if (token) {
+        try {
+            username = jwt.verify(
+                token,
+                process.env.JWT_SECRET || "mysecretkey"
+            ).username;
+        } catch (error) {
+            return res.status(401).json({ message: "Invalid or expired token." });
+        }
+    }
 
     if (!username) {
-        return res.status(401).json({ message: "User not logged in." });
+        return res.status(401).json({ message: "Authentication required." });
     }
 
     // Check if book exists
