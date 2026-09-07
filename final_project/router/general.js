@@ -43,6 +43,23 @@ public_users.get('/',function (req, res) {
     res.send(JSON.stringify(books, null, 4));
 });
 
+const axios = require("axios");
+
+// Get book details based on ISBN using async-await
+public_users.get("/isbn/:isbn", async function (req, res) {
+    const isbn = req.params.isbn;
+
+    try {
+        const response = await axios.get(`http://localhost:5000/isbn/${isbn}`);
+        return res.status(200).send(JSON.stringify(response.data, null, 4));
+    } catch (error) {
+        return res.status(500).json({
+            message: "Error fetching book details",
+            error: error.message
+        });
+    }
+});
+
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
   const isbn = req.params.isbn;     // Retrieve ISBN from request parameters
