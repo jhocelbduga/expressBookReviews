@@ -12,6 +12,37 @@ const isValid = (username)=>{ //returns boolean
 const authenticatedUser = (username,password)=>{ //returns boolean
 //write code to check if username and password match the one we have in records.
 }
+auth_users.post("/customer/login", (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    // Validate input
+    if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required." });
+    }
+
+    // Check if user exists
+    const user = users.find((u) => u.username === username && u.password === password);
+
+    if (!user) {
+        return res.status(401).json({ message: "Invalid username or password." });
+    }
+
+    // Generate JWT token valid for 1 hour
+    const accessToken = jwt.sign(
+        { username: username },
+        "access",                 // Secret key
+        { expiresIn: 60 * 60 }    // 1 hour
+    );
+
+    // Save token in session
+    req.session.authorization = {
+        accessToken,
+        username
+    };
+
+    return res.status(200).json({ message: "Login successful.", token: accessToken });
+});
 
 //only registered users can login
 regd_users.post("/login", (req,res) => {
