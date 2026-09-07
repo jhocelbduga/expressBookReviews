@@ -35,16 +35,30 @@ regd_users.post("/login", (req,res) => {
     req.session.authorization = { accessToken, username };
     return res.status(200).json({ message: "Login successful.", token: accessToken });
 });
-
-auth_users.put("/customer/review/:isbn", (req, res) => {
+// Authenticated users can add or modify a book review.
+regd_users.put("/review/:isbn", (req, res) => {
     const isbn = req.params.isbn;
     const review = req.query.review;
 
-    // Check if user is logged in
-    const username = req.session.authorization?.username;
+    const authorization = req.headers.authorization || "";
+    const token = authorization.startsWith("Bearer ")
+        ? authorization.slice(7)
+        : authorization;
+    let username = req.session.authorization?.username;
+
+    if (token) {
+        try {
+            username = jwt.verify(
+                token,
+                process.env.JWT_SECRET || "mysecretkey"
+            ).username;
+        } catch (error) {
+            return res.status(401).json({ message: "Invalid or expired token." });
+        }
+    }
 
     if (!username) {
-        return res.status(401).json({ message: "User not logged in." });
+        return res.status(401).json({ message: "Authentication required." });
     }
 
     // Check if review text is provided
@@ -64,12 +78,6 @@ auth_users.put("/customer/review/:isbn", (req, res) => {
         message: "Review added/modified successfully.",
         reviews: books[isbn].reviews
     });
-});
-
-// Add a book review
-regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
 });
 
 module.exports.authenticated = regd_users;
